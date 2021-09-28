@@ -23,7 +23,7 @@ public class UserService {
 
     public User getUserDetails(String userId) {
         if (!Utils.isOk(userId)) {
-            return new User();
+            return null;
         }
         Optional<com.rokomari.videoapi.idm.model.User> userEo = userRepository.findUserByUsername(userId);
         if (userEo.isPresent()){
@@ -31,7 +31,7 @@ public class UserService {
 //            BeanUtils.copyProperties(userEo.get(),userDto);
             return userDto;
         }
-        return new User();
+        return null;
     }
 
     @Transactional

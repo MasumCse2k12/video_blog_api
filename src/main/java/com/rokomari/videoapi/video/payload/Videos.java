@@ -67,8 +67,11 @@ public class Videos implements Serializable {
                         }
                     }
                 }
+                if(Utils.valueExists(data, 9)){
+                    this.uploadedUser = (String) data[9];
+                }
             }else{
-
+               //TODO
             }
         }
     }

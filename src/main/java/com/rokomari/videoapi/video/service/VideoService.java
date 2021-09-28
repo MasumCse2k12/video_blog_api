@@ -142,16 +142,20 @@ public class VideoService {
         VideosResponse response = new VideosResponse();
         try {
             List<Videos> dataList = new ArrayList<>();
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Integer userId = null;
-            if (authentication != null) {
-                UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-                userId = principal.getId();
+            try {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication != null) {
+                    UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+                    userId = principal.getId();
+                }
+            }catch (Throwable t){
+
             }
             String mainQ = "select v.id, v.url, v.description, v.view_count, v.uploaded_at, v.uploaded_by, " +
                     "SUM(CASE WHEN vr.reaction_status =:like THEN 1 ELSE 0 END) AS likeCount," +
-                    "SUM(CASE WHEN vr.reaction_status =:dislike THEN 1 ELSE 0 END) AS dislikeCount, CASE WHEN  " + userId + " is not null AND v.id = " + userId + " then vr.reaction_status else 0 end " +
-                    "from videos v left join video_request vr on vr.video_id = v.id " +
+                    "SUM(CASE WHEN vr.reaction_status =:dislike THEN 1 ELSE 0 END) AS dislikeCount, CASE WHEN  " + userId + " is not null AND v.id = " + userId + " then vr.reaction_status else 0 end, u.name " +
+                    "from videos v left join video_request vr on vr.video_id = v.id left join users u on u.id = v.uploaded_by " +
                     "where v.is_deleted =:isDeleted ";
 
             Map<String, Object> params = new HashMap<>();
@@ -159,7 +163,17 @@ public class VideoService {
             params.put("dislike", ReactionStatus.dislike.getValue());
             params.put("isDeleted", false);
 
-            mainQ += "group by v.id, v.url, v.description, v.view_count, v.uploaded_at, v.uploaded_by, vr.reaction_status order by v.id desc";
+            if(request != null && Utils.isOk(request.getId())){
+                mainQ += " AND v.id =:videoId";
+                params.put("videoId", request.getId());
+            }
+
+            if(request != null && Utils.isOk(request.getUrl())){
+                mainQ += " AND v.url =:videoUrl";
+                params.put("videoUrl", request.getUrl());
+            }
+
+            mainQ += "group by v.id, v.url, u.name, v.description, v.view_count, v.uploaded_at, v.uploaded_by, vr.reaction_status order by v.id desc";
 
             LOGGER.info("===videos summary QUERY:{}", mainQ);
             LOGGER.info("===PARAM START==");
